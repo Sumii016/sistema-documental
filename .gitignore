@@ -1,0 +1,16 @@
+# Nunca subir secretos ni configuración local
+.env
+secrets/
+*.pem
+*.key
+
+# Dependencias y builds (se usarán en fases siguientes)
+node_modules/
+dist/
+build/
+__pycache__/
+.venv/
+
+# Sistema
+.DS_Store
+Thumbs.db

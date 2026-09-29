@@ -1,0 +1,106 @@
+# Fase 1 — Infraestructura base del sistema documental
+# Ningún secreto vive en este archivo: las contraseñas se leen desde ./secrets/*.txt
+# (generados con scripts/generar-secretos.*) y la config no sensible desde .env
+
+name: sistema-documental
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      # La variable *_FILE hace que Postgres lea la contraseña desde un archivo
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets:
+      - postgres_password
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro   # se ejecuta solo la primera vez
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT}:5432"          # solo accesible desde tu máquina
+    networks: [backend]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    secrets:
+      - redis_password
+    # La contraseña se lee del secreto al arrancar; nunca se escribe aquí
+    command: ["sh", "-c", "exec redis-server --requirepass \"$$(cat /run/secrets/redis_password)\" --appendonly yes"]
+    volumes:
+      - redis_data:/data
+    ports:
+      - "127.0.0.1:${REDIS_PORT}:6379"
+    networks: [backend]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$(cat /run/secrets/redis_password)\" --no-auth-warning ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  storage:
+    # MinIO oficial ya no publica imágenes (repo archivado en abril 2026).
+    # Usamos un fork comunitario compatible. Como la app habla el protocolo S3,
+    # cambiar a otro backend (Garage, SeaweedFS, AWS S3) no afecta al código.
+    image: ${STORAGE_IMAGE}
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER_FILE: /run/secrets/minio_root_user
+      MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_root_password
+    secrets:
+      - minio_root_user
+      - minio_root_password
+    volumes:
+      - storage_data:/data
+    ports:
+      - "127.0.0.1:${STORAGE_API_PORT}:9000"       # API S3
+      - "127.0.0.1:${STORAGE_CONSOLE_PORT}:9001"   # consola web
+    networks: [backend]
+
+  portainer:
+    # Panel web para administrar contenedores. Solo arranca con el perfil "admin":
+    #   docker compose --profile admin up -d
+    # ⚠ Tiene acceso al socket de Docker = control total del equipo. Úsalo solo en local.
+    image: ${PORTAINER_IMAGE}
+    restart: unless-stopped
+    profiles: [admin]
+    # Crea el usuario "admin" con la contraseña del secreto (sin asistente inicial)
+    command: ["--admin-password-file", "/run/secrets/portainer_admin_password"]
+    secrets:
+      - portainer_admin_password
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    ports:
+      - "127.0.0.1:${PORTAINER_PORT}:9443"         # solo HTTPS y solo desde tu máquina
+    # Sin red "backend": Portainer habla con Docker por el socket, no necesita ver la BD
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  pg_data:
+  redis_data:
+  storage_data:
+  portainer_data:
+
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password.txt
+  redis_password:
+    file: ./secrets/redis_password.txt
+  minio_root_user:
+    file: ./secrets/minio_root_user.txt
+  minio_root_password:
+    file: ./secrets/minio_root_password.txt
+  portainer_admin_password:
+    file: ./secrets/portainer_admin_password.txt
