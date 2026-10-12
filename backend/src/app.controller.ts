@@ -16,4 +16,13 @@ export class AppController {
   ping(): { estado: string; hora: string } {
     return this.appService.obtenerEstado();
   }
+
+  // Ruta 3: GET /db
+  @Get('db')
+  verificarBaseDeDatos(): Promise<{
+    baseDeDatos: string;
+    tiposDocumento: number;
+  }> {
+    return this.appService.verificarBaseDeDatos();
+  }
 }
