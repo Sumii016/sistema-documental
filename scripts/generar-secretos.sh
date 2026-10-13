@@ -18,6 +18,7 @@ generar() {
 }
 
 generar postgres_password
+generar postgres_app_password
 generar redis_password
 generar minio_root_password
 generar portainer_admin_password

@@ -15,11 +15,12 @@ services:
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
     secrets:
       - postgres_password
+      - postgres_app_password
     volumes:
       - pg_data:/var/lib/postgresql/data
-      - ./db/init:/docker-entrypoint-initdb.d:ro   # se ejecuta solo la primera vez
+      - ./db/init:/docker-entrypoint-initdb.d:ro # se ejecuta solo la primera vez
     ports:
-      - "127.0.0.1:${POSTGRES_PORT}:5432"          # solo accesible desde tu máquina
+      - "127.0.0.1:${POSTGRES_PORT}:5432" # solo accesible desde tu máquina
     networks: [backend]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
@@ -33,14 +34,23 @@ services:
     secrets:
       - redis_password
     # La contraseña se lee del secreto al arrancar; nunca se escribe aquí
-    command: ["sh", "-c", "exec redis-server --requirepass \"$$(cat /run/secrets/redis_password)\" --appendonly yes"]
+    command:
+      [
+        "sh",
+        "-c",
+        'exec redis-server --requirepass "$$(cat /run/secrets/redis_password)" --appendonly yes',
+      ]
     volumes:
       - redis_data:/data
     ports:
       - "127.0.0.1:${REDIS_PORT}:6379"
     networks: [backend]
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a \"$$(cat /run/secrets/redis_password)\" --no-auth-warning ping | grep PONG"]
+      test:
+        [
+          "CMD-SHELL",
+          'redis-cli -a "$$(cat /run/secrets/redis_password)" --no-auth-warning ping | grep PONG',
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -61,8 +71,8 @@ services:
     volumes:
       - storage_data:/data
     ports:
-      - "127.0.0.1:${STORAGE_API_PORT}:9000"       # API S3
-      - "127.0.0.1:${STORAGE_CONSOLE_PORT}:9001"   # consola web
+      - "127.0.0.1:${STORAGE_API_PORT}:9000" # API S3
+      - "127.0.0.1:${STORAGE_CONSOLE_PORT}:9001" # consola web
     networks: [backend]
 
   portainer:
@@ -80,7 +90,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data
     ports:
-      - "127.0.0.1:${PORTAINER_PORT}:9443"         # solo HTTPS y solo desde tu máquina
+      - "127.0.0.1:${PORTAINER_PORT}:9443" # solo HTTPS y solo desde tu máquina
     # Sin red "backend": Portainer habla con Docker por el socket, no necesita ver la BD
 
 networks:
@@ -96,6 +106,8 @@ volumes:
 secrets:
   postgres_password:
     file: ./secrets/postgres_password.txt
+  postgres_app_password:
+    file: ./secrets/postgres_app_password.txt
   redis_password:
     file: ./secrets/redis_password.txt
   minio_root_user:

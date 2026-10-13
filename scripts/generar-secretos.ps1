@@ -21,6 +21,7 @@ function Generar([string]$nombre, [string]$valor = $null) {
 }
 
 Generar "postgres_password"
+Generar "postgres_app_password"
 Generar "redis_password"
 Generar "minio_root_password"
 Generar "portainer_admin_password"
