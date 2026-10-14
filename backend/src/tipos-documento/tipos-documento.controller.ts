@@ -4,10 +4,12 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
 } from '@nestjs/common';
 import { CrearTipoDocumentoDto } from './dto/crear-tipo-documento.dto';
 import { TiposDocumentoService } from './tipos-documento.service';
+import { ActualizarTipoDocumentoDto } from './dto/actualizar-tipo-documento.dto';
 
 @Controller('tipos-documento')
 export class TiposDocumentoController {
@@ -26,5 +28,13 @@ export class TiposDocumentoController {
   @Post()
   crear(@Body() datos: CrearTipoDocumentoDto) {
     return this.servicio.crear(datos);
+  }
+
+  @Patch(':id')
+  actualizar(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() datos: ActualizarTipoDocumentoDto,
+  ) {
+    return this.servicio.actualizar(id, datos);
   }
 }

@@ -1,10 +1,12 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ActualizarTipoDocumentoDto } from './dto/actualizar-tipo-documento.dto';
 import { CrearTipoDocumentoDto } from './dto/crear-tipo-documento.dto';
 import { TipoDocumento } from './tipo-documento.entity';
 
@@ -42,5 +44,25 @@ export class TiposDocumentoService {
       nombre: datos.nombre.trim(),
     });
     return this.repositorio.save(nuevo);
+  }
+
+  async actualizar(
+    id: number,
+    datos: ActualizarTipoDocumentoDto,
+  ): Promise<TipoDocumento> {
+    if (datos.nombre === undefined && datos.activo === undefined) {
+      throw new BadRequestException('No se envió ningún campo para actualizar');
+    }
+
+    const tipo = await this.obtener(id);
+
+    if (datos.nombre !== undefined) {
+      tipo.nombre = datos.nombre.trim();
+    }
+    if (datos.activo !== undefined) {
+      tipo.activo = datos.activo;
+    }
+
+    return this.repositorio.save(tipo);
   }
 }
