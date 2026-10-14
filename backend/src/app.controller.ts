@@ -19,10 +19,7 @@ export class AppController {
 
   // Ruta 3: GET /db
   @Get('db')
-  verificarBaseDeDatos(): Promise<{
-    baseDeDatos: string;
-    tiposDocumento: number;
-  }> {
+  verificarBaseDeDatos() {
     return this.appService.verificarBaseDeDatos();
   }
 }
