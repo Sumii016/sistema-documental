@@ -4,6 +4,7 @@ export const configuracion = () => ({
   app: {
     host: process.env.HOST,
     puerto: Number(process.env.PORT),
+    frontendOrigen: process.env.FRONTEND_ORIGIN,
   },
   db: {
     host: process.env.DB_HOST,

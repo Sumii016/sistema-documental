@@ -13,6 +13,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { SubirFacturaDto } from './dto/subir-factura.dto';
 import { BuscarFacturasDto } from './dto/buscar-facturas.dto';
 import { FacturasPorCobrarService } from './facturas-por-cobrar.service';
+import { Throttle } from '@nestjs/throttler';
 
 const MAX_BYTES = 20 * 1024 * 1024; // 20 MB, igual que el CHECK de la BD
 
@@ -20,6 +21,7 @@ const MAX_BYTES = 20 * 1024 * 1024; // 20 MB, igual que el CHECK de la BD
 export class FacturasPorCobrarController {
   constructor(private readonly servicio: FacturasPorCobrarService) {}
 
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post()
   @UseInterceptors(
     FileInterceptor('archivo', {

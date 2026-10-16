@@ -9,9 +9,11 @@ import { Redis } from 'ioredis';
 import { DataSource } from 'typeorm';
 import { REDIS } from '../redis/redis.module';
 import { StorageService } from '../storage/storage.service';
+import { SkipThrottle } from '@nestjs/throttler';
 
 type Estado = 'ok' | 'error';
 
+@SkipThrottle()
 @Controller('health')
 export class HealthController {
   private readonly logger = new Logger(HealthController.name);

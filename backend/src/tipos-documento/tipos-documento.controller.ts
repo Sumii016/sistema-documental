@@ -20,7 +20,7 @@ export class TiposDocumentoController {
     return this.servicio.listar();
   }
 
-  @Get(':id/descarga')
+  @Get(':id/')
   obtener(@Param('id', ParseIntPipe) id: number) {
     return this.servicio.obtener(id);
   }
