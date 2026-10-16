@@ -14,3 +14,6 @@ __pycache__/
 # Sistema
 .DS_Store
 Thumbs.db
+
+# Archivos de prueba (facturas reales, datos de clientes)
+muestras/

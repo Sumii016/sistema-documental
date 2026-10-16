@@ -8,6 +8,7 @@ import { DatabaseModule } from './database/database.module';
 import { RedisModule } from './redis/redis.module';
 import { HealthModule } from './health/health.module';
 import { TiposDocumentoModule } from './tipos-documento/tipos-documento.module';
+import { FacturasPorCobrarModule } from './facturas-por-cobrar/facturas-por-cobrar.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { TiposDocumentoModule } from './tipos-documento/tipos-documento.module';
     RedisModule,
     HealthModule,
     TiposDocumentoModule,
+    FacturasPorCobrarModule,
   ],
   controllers: [AppController],
   providers: [
