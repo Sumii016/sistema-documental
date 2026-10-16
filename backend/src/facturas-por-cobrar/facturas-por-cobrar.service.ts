@@ -7,10 +7,20 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, QueryFailedError, RelationId, Repository } from 'typeorm';
+import {
+  Between,
+  DataSource,
+  FindOptionsWhere,
+  ILike,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+  QueryFailedError,
+  Repository,
+} from 'typeorm';
 import { Documento } from '../documentos/documento.entity';
 import { StorageService } from '../storage/storage.service';
 import { TipoDocumento } from '../tipos-documento/tipo-documento.entity';
+import { BuscarFacturasDto } from './dto/buscar-facturas.dto';
 import { SubirFacturaDto } from './dto/subir-factura.dto';
 import { FacturaPorCobrar } from './factura-por-cobrar.entity';
 
@@ -30,6 +40,11 @@ const FIRMAS = [
 
 function detectarTipo(contenido: Buffer) {
   return FIRMAS.find((f) => f.bytes.every((b, i) => contenido[i] === b));
+}
+
+// En LIKE, % y _ son comodines; los "escapamos" para buscarlos como texto normal
+function escaparLike(texto: string): string {
+  return texto.replace(/[\\%_]/g, '\\$&');
 }
 
 @Injectable()
@@ -130,6 +145,38 @@ export class FacturasPorCobrarService {
       throw new NotFoundException(`No existe la factura ${id}`);
     }
     return factura;
+  }
+
+  async buscar(filtros: BuscarFacturasDto) {
+    const { numero, cliente, vendedor, desde, hasta, pagina, porPagina } =
+      filtros;
+
+    if (desde && hasta && hasta < desde) {
+      throw new BadRequestException('hasta no puede ser anterior a desde');
+    }
+
+    const where: FindOptionsWhere<FacturaPorCobrar> = {};
+    if (numero) where.numeroFactura = ILike(`${numero}%`);
+    if (cliente) where.clienteNombre = ILike(`%${escaparLike(cliente)}%`);
+    if (vendedor) where.vendedor = ILike(`%${escaparLike(vendedor)}%`);
+    if (desde && hasta) where.fechaEmision = Between(desde, hasta);
+    else if (desde) where.fechaEmision = MoreThanOrEqual(desde);
+    else if (hasta) where.fechaEmision = LessThanOrEqual(hasta);
+
+    const [datos, total] = await this.facturas.findAndCount({
+      where,
+      order: { fechaEmision: 'DESC', numeroFactura: 'ASC' },
+      skip: (pagina - 1) * porPagina,
+      take: porPagina,
+    });
+
+    return {
+      datos,
+      total,
+      pagina,
+      porPagina,
+      totalPaginas: Math.ceil(total / porPagina),
+    };
   }
 
   async urlDescarga(
