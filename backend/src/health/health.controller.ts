@@ -10,9 +10,16 @@ import { DataSource } from 'typeorm';
 import { REDIS } from '../redis/redis.module';
 import { StorageService } from '../storage/storage.service';
 import { SkipThrottle } from '@nestjs/throttler';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiServiceUnavailableResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
 type Estado = 'ok' | 'error';
 
+@ApiTags('Salud')
 @SkipThrottle()
 @Controller('health')
 export class HealthController {
@@ -25,6 +32,13 @@ export class HealthController {
   ) {}
 
   @Get()
+  @ApiOperation({
+    summary: 'Estado de la base de datos, Redis y almacenamiento',
+  })
+  @ApiOkResponse({ description: 'Todos los servicios responden ' })
+  @ApiServiceUnavailableResponse({
+    description: 'Al menos un servicio no responde',
+  })
   async verificar() {
     const [db, redis, storage] = await Promise.all([
       this.probar('db', () => this.dataSource.query('SELECT 1')),

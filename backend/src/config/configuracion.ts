@@ -5,6 +5,7 @@ export const configuracion = () => ({
     host: process.env.HOST,
     puerto: Number(process.env.PORT),
     frontendOrigen: process.env.FRONTEND_ORIGIN,
+    swagger: process.env.SWAGGER_HABILITADO === 'true',
   },
   db: {
     host: process.env.DB_HOST,

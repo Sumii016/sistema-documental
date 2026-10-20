@@ -10,6 +10,7 @@ import { FacturasPorCobrarModule } from './facturas-por-cobrar/facturas-por-cobr
 import { HealthModule } from './health/health.module';
 import { RedisModule } from './redis/redis.module';
 import { TiposDocumentoModule } from './tipos-documento/tipos-documento.module';
+import { ApiExcludeController } from '@nestjs/swagger';
 
 @Module({
   imports: [
