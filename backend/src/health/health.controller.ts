@@ -16,10 +16,12 @@ import {
   ApiServiceUnavailableResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { Publica } from '../auth/publica.decorator';
 
 type Estado = 'ok' | 'error';
 
 @ApiTags('Salud')
+@Publica()
 @SkipThrottle()
 @Controller('health')
 export class HealthController {

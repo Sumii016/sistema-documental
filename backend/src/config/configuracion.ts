@@ -26,4 +26,9 @@ export const configuracion = () => ({
     accessKey: leerSecreto('STORAGE_ACCESS_KEY_FILE'),
     secretKey: leerSecreto('STORAGE_SECRET_KEY_FILE'),
   },
+  sesion: {
+    secreto: leerSecreto('SESSION_SECRET_FILE'),
+    cookieSegura: process.env.COOKIE_SEGURA !== 'false',
+    horas: 8,
+  },
 });

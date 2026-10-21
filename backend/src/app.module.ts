@@ -11,6 +11,8 @@ import { HealthModule } from './health/health.module';
 import { RedisModule } from './redis/redis.module';
 import { TiposDocumentoModule } from './tipos-documento/tipos-documento.module';
 import { ApiExcludeController } from '@nestjs/swagger';
+import { AuthModule } from './auth/auth.module';
+import { AutenticadoGuard } from './auth/autenticado.guard';
 
 @Module({
   imports: [
@@ -21,8 +23,13 @@ import { ApiExcludeController } from '@nestjs/swagger';
     HealthModule,
     TiposDocumentoModule,
     FacturasPorCobrarModule,
+    AuthModule,
   ],
   controllers: [AppController],
-  providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
+  providers: [
+    AppService,
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: AutenticadoGuard },
+  ],
 })
 export class AppModule {}
