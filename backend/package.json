@@ -14,7 +14,7 @@
     "migracion:ejecutar": "nest build && node --env-file=.env ./node_modules/typeorm/cli.js migration:run -d dist/database/data-source.js",
     "migracion:revertir": "nest build && node --env-file=.env ./node_modules/typeorm/cli.js migration:revert -d dist/database/data-source.js",
     "migracion:estado": "nest build && node --env-file=.env ./node_modules/typeorm/cli.js migration:show -d dist/database/data-source.js",
-    "usuario:crear-admin": "nest build && node --env-file=.env dist/scripts/crear-admin.js",
+    "usuario:crear": "nest build && node --env-file=.env dist/scripts/crear-usuario.js",
     "usuario:cambiar-contrasena": "nest build && node --env-file=.env dist/scripts/cambiar-contrasena.js",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",

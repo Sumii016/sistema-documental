@@ -16,6 +16,7 @@ import {
   ApiConflictResponse,
   ApiConsumes,
   ApiCreatedResponse,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -24,12 +25,20 @@ import {
   ApiTooManyRequestsResponse,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import { AuditoriaService } from '../auditoria/auditoria.service';
+import {
+  Contexto,
+  type ContextoPeticion,
+} from '../auditoria/contexto-peticion.decorator';
 import {
   SubirFacturaConArchivoDto,
   SubirFacturaDto,
 } from './dto/subir-factura.dto';
 import { BuscarFacturasDto } from './dto/buscar-facturas.dto';
 import { FacturasPorCobrarService } from './facturas-por-cobrar.service';
+import { Roles } from '../auth/roles.decorator';
+import type { UsuarioSesion } from '../auth/sesion-usuario';
+import { UsuarioActual } from '../auth/usuario-actual.decorator';
 
 const MAX_BYTES = 20 * 1024 * 1024; // 20 MB, igual que el CHECK de la BD
 
@@ -39,7 +48,10 @@ const MAX_BYTES = 20 * 1024 * 1024; // 20 MB, igual que el CHECK de la BD
 })
 @Controller('facturas-por-cobrar')
 export class FacturasPorCobrarController {
-  constructor(private readonly servicio: FacturasPorCobrarService) {}
+  constructor(
+    private readonly servicio: FacturasPorCobrarService,
+    private readonly auditoria: AuditoriaService,
+  ) {}
 
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post()
@@ -48,6 +60,8 @@ export class FacturasPorCobrarController {
       limits: { fileSize: MAX_BYTES, files: 1, fields: 20 },
     }),
   )
+  @Roles('ADMIN', 'CARGADOR')
+  @ApiForbiddenResponse({ description: 'Su rolno permite subir facturas' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: SubirFacturaConArchivoDto })
   @ApiOperation({
@@ -62,11 +76,20 @@ export class FacturasPorCobrarController {
     description: 'El numero de factura o el archivo ya existen',
   })
   @ApiPayloadTooLargeResponse({ description: 'El archivo pasa de 20 MB' })
-  subir(
+  async subir(
     @UploadedFile() archivo: Express.Multer.File | undefined,
     @Body() dto: SubirFacturaDto,
+    @UsuarioActual() usuario: UsuarioSesion,
+    @Contexto() ctx: ContextoPeticion,
   ) {
-    return this.servicio.subir(archivo, dto);
+    const factura = await this.servicio.subir(archivo, dto, usuario);
+    await this.auditoria.registrar(ctx, {
+      accion: 'FACTURA_SUBIDA',
+      entidad: 'factura',
+      entidadId: factura.id,
+      detalle: { numeroFactura: factura.numeroFactura },
+    });
+    return factura;
   }
 
   @Get()
@@ -102,7 +125,16 @@ export class FacturasPorCobrarController {
   @ApiOkResponse({ description: '{ url, expiraEnMinmutos }' })
   @ApiBadRequestResponse({ description: 'El id no es un UUID' })
   @ApiNotFoundResponse({ description: 'No existe' })
-  descarga(@Param('id', ParseUUIDPipe) id: string) {
-    return this.servicio.urlDescarga(id);
+  async descarga(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Contexto() ctx: ContextoPeticion,
+  ) {
+    const resultado = await this.servicio.urlDescarga(id);
+    await this.auditoria.registrar(ctx, {
+      accion: 'FACTURA_DESCARGADA',
+      entidad: 'factura',
+      entidadId: id,
+    });
+    return resultado;
   }
 }

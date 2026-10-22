@@ -23,9 +23,7 @@ import { TipoDocumento } from '../tipos-documento/tipo-documento.entity';
 import { BuscarFacturasDto } from './dto/buscar-facturas.dto';
 import { SubirFacturaDto } from './dto/subir-factura.dto';
 import { FacturaPorCobrar } from './factura-por-cobrar.entity';
-
-//temporal: se reemplaza por el usuario real cuando el login de microsoft
-const USUARIO_PROVISIONAL = 'sistema';
+import { UsuarioSesion } from '../auth/sesion-usuario';
 
 //los primeros bytes de cada formato ("numero magico")
 const FIRMAS = [
@@ -63,6 +61,7 @@ export class FacturasPorCobrarService {
   async subir(
     archivo: Express.Multer.File | undefined,
     dto: SubirFacturaDto,
+    usuario: UsuarioSesion,
   ): Promise<FacturaPorCobrar> {
     // 1. Validar el archivo por su CONTENIDO, no por su nombre
     if (!archivo || archivo.size === 0) {
@@ -115,13 +114,13 @@ export class FacturasPorCobrarService {
           mimeType: tipo.mime,
           tamanoBytes: archivo.size,
           sha256,
-          subidoPor: USUARIO_PROVISIONAL,
+          subidoPor: usuario.correo,
         });
         await tx.insert(FacturaPorCobrar, {
           ...dto,
           id: facturaId,
           documentoId,
-          creadoPor: USUARIO_PROVISIONAL,
+          creadoPor: usuario.correo,
         });
         await this.storage.subir(clave, archivo.buffer, tipo.mime);
       });

@@ -13,6 +13,9 @@ import { TiposDocumentoModule } from './tipos-documento/tipos-documento.module';
 import { ApiExcludeController } from '@nestjs/swagger';
 import { AuthModule } from './auth/auth.module';
 import { AutenticadoGuard } from './auth/autenticado.guard';
+import { RolesGuard } from './auth/roles.guard';
+import { UsuariosModule } from './usuarios/usuarios.module';
+import { AuditoriaModule } from './auditoria/auditoria.module';
 
 @Module({
   imports: [
@@ -24,12 +27,15 @@ import { AutenticadoGuard } from './auth/autenticado.guard';
     TiposDocumentoModule,
     FacturasPorCobrarModule,
     AuthModule,
+    UsuariosModule,
+    AuditoriaModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: AutenticadoGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })
 export class AppModule {}

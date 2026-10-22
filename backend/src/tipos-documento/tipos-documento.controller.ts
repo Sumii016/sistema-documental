@@ -15,10 +15,12 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiTags,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 import { CrearTipoDocumentoDto } from './dto/crear-tipo-documento.dto';
 import { TiposDocumentoService } from './tipos-documento.service';
 import { ActualizarTipoDocumentoDto } from './dto/actualizar-tipo-documento.dto';
+import { Roles } from '../auth/roles.decorator';
 
 @ApiTags('Tipos de documento')
 @Controller('tipos-documento')
@@ -42,6 +44,8 @@ export class TiposDocumentoController {
   }
 
   @Post()
+  @Roles('ADMIN')
+  @ApiForbiddenResponse({ description: 'Solo administradores' })
   @ApiOperation({ summary: 'Crear un tipo de documento' })
   @ApiCreatedResponse({ description: 'Creado' })
   @ApiConflictResponse({ description: 'Ya existe ese codigo ' })
@@ -50,6 +54,8 @@ export class TiposDocumentoController {
   }
 
   @Patch(':id')
+  @Roles('ADMIN')
+  @ApiForbiddenResponse({ description: 'Solo administradores' })
   @ApiOperation({ summary: 'Cambiar nombre o activar/desactivar' })
   @ApiOkResponse({ description: 'Actualizado' })
   @ApiBadRequestResponse({ description: 'Datos invalidos o cuerpo vacio' })
