@@ -24,26 +24,7 @@ import { BuscarFacturasDto } from './dto/buscar-facturas.dto';
 import { SubirFacturaDto } from './dto/subir-factura.dto';
 import { FacturaPorCobrar } from './factura-por-cobrar.entity';
 import { UsuarioSesion } from '../auth/sesion-usuario';
-
-//los primeros bytes de cada formato ("numero magico")
-const FIRMAS = [
-  {
-    mime: 'application/pdf',
-    ext: 'pdf',
-    bytes: [0x25, 0x50, 0x44, 0x46, 0x2d],
-  }, //%PDF--
-  { mime: 'image/png', ext: 'png', bytes: [0x89, 0x50, 0x4e, 0x47] },
-  { mime: 'image/jpeg', ext: 'jpg', bytes: [0xff, 0xd8, 0xff] },
-];
-
-function detectarTipo(contenido: Buffer) {
-  return FIRMAS.find((f) => f.bytes.every((b, i) => contenido[i] === b));
-}
-
-// En LIKE, % y _ son comodines; los "escapamos" para buscarlos como texto normal
-function escaparLike(texto: string): string {
-  return texto.replace(/[\\%_]/g, '\\$&');
-}
+import { detectarTipo, escaparLike } from './archivos';
 
 @Injectable()
 export class FacturasPorCobrarService {
