@@ -75,6 +75,60 @@ services:
       - "127.0.0.1:${STORAGE_CONSOLE_PORT}:9001" # consola web
     networks: [backend]
 
+  api:
+    # La API del sistema documental. Solo arranca con el perfil "app":
+    #   docker compose --profile app up -d --build
+    # En desarrollo diario se sigue usando "npm run start:dev" (puerto 3000).
+    build: ./backend
+    image: sistema-documental-api
+    restart: unless-stopped
+    profiles: [app]
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      storage:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0 # dentro del contenedor; hacia afuera solo 127.0.0.1 (ver ports)
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: docs_app
+      DB_PASSWORD_FILE: /run/secrets/postgres_app_password
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD_FILE: /run/secrets/redis_password
+      STORAGE_ENDPOINT: http://storage:9000 # la API habla con el almacenamiento por la red interna
+      STORAGE_PUBLIC_ENDPOINT: http://127.0.0.1:${STORAGE_API_PORT} # dirección que usa el navegador
+      STORAGE_REGION: us-east-1
+      STORAGE_BUCKET: documentos
+      STORAGE_ACCESS_KEY_FILE: /run/secrets/storage_app_access_key
+      STORAGE_SECRET_KEY_FILE: /run/secrets/storage_app_secret_key
+      SESSION_SECRET_FILE: /run/secrets/session_secret
+      COOKIE_SEGURA: ${COOKIE_SEGURA:-true} # seguro por defecto; en local sin https: false
+      SWAGGER_HABILITADO: ${SWAGGER_HABILITADO:-false} # apagado por defecto
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN}
+    # Solo los secretos que la API necesita (ni el admin de la BD ni el root del almacenamiento)
+    secrets:
+      - postgres_app_password
+      - redis_password
+      - storage_app_access_key
+      - storage_app_secret_key
+      - session_secret
+    ports:
+      - "127.0.0.1:${API_PORT}:3000"
+    networks: [backend]
+    # Endurecimiento: no puede modificar sus archivos ni ganar privilegios
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+
   portainer:
     # Panel web para administrar contenedores. Solo arranca con el perfil "admin":
     #   docker compose --profile admin up -d
@@ -116,3 +170,9 @@ secrets:
     file: ./secrets/minio_root_password.txt
   portainer_admin_password:
     file: ./secrets/portainer_admin_password.txt
+  storage_app_access_key:
+    file: ./secrets/storage_app_access_key.txt
+  storage_app_secret_key:
+    file: ./secrets/storage_app_secret_key.txt
+  session_secret:
+    file: ./secrets/session_secret.txt
